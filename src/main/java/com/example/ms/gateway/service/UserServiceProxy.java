@@ -1,8 +1,6 @@
 package com.example.ms.gateway.service;
 
-import com.example.ms.gateway.entity.Post;
-import com.example.ms.gateway.entity.User;
-import lombok.AllArgsConstructor;
+import com.example.ms.gateway.dto.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;

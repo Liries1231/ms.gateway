@@ -1,6 +1,6 @@
 package com.example.ms.gateway.service;
 
-import com.example.ms.gateway.entity.Post;
+import com.example.ms.gateway.dto.Post;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.http.ResponseEntity;

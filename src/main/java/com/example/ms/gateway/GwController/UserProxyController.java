@@ -1,6 +1,6 @@
 package com.example.ms.gateway.GwController;
 
-import com.example.ms.gateway.entity.User;
+import com.example.ms.gateway.dto.User;
 import com.example.ms.gateway.service.UserServiceProxy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

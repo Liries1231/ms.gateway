@@ -1,4 +1,4 @@
-package com.example.ms.gateway.entity;
+package com.example.ms.gateway.dto;
 
 
 import lombok.AllArgsConstructor;
