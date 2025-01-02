@@ -18,11 +18,11 @@ public class PostProxyController {
     public ResponseEntity<?> proxyToPostService() {
         return postServiceProxy.getPost();
     }
-
     @PostMapping("/post")
-    public ResponseEntity<?> proxyPostRequest(@RequestBody Post post,String userId) {
-
-        return postServiceProxy.createPost(post,userId);
+    public ResponseEntity<String> createPost(@RequestBody Post post,
+                                             @RequestHeader("UserData") String userId) {
+        return postServiceProxy.createPost(post, userId);
     }
-}
 
+
+}

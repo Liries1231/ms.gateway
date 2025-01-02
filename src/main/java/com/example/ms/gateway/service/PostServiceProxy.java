@@ -33,15 +33,12 @@ public class PostServiceProxy {
 
         // Создаём заголовки
         HttpHeaders headers = new HttpHeaders();
-        headers.set("UserData", userId); // Устанавливаем userId в заголовок
+        headers.set("UserData", userId);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // Объединяем заголовки и тело запроса
         HttpEntity<Post> requestEntity = new HttpEntity<>(post, headers);
 
-        // Отправляем запрос
         return restTemplate.postForEntity(url, requestEntity, String.class);
     }
 }
-
 
