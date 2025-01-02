@@ -32,7 +32,7 @@ import java.io.IOException;
 @Component
 public class JwtFilter implements Filter {
 
-    private static final String SECRET_KEY = "mySecretKey"; // Твой секретный ключ
+    private static final String SECRET_KEY = "mySecretKey";
 
 
     @Override
