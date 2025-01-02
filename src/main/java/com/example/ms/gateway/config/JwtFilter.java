@@ -1,7 +1,5 @@
 package com.example.ms.gateway.config;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.example.ms.gateway.dto.User;
 import io.micrometer.common.lang.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -18,112 +16,50 @@ import org.springframework.web.server.WebFilterChain;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.util.Optional;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Component
-@Slf4j
-public class JwtFilter implements WebFilter {
+public class JwtFilter implements Filter {
 
-    @Value("${user.service.url}")
-    private String userServiceUrl; // URL микросервиса ms-users
-
-    private static final String AUTH_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    @Autowired
-    private WebClient.Builder webClientBuilder;
-
-
+    private static final String SECRET_KEY = "mySecretKey"; // Твой секретный ключ
 
 
     @Override
-    public @NonNull Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String uri = exchange.getRequest().getURI().toString();
-        log.info("Received request to URI: {}", uri);
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        if (uri.contains("/login") || uri.contains("/register")) {
-            return chain.filter(exchange);
+        String authHeader = httpRequest.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            try {
+                DecodedJWT decodedJWT = JWT.require(Algorithm.HMAC256(SECRET_KEY))
+                        .build()
+                        .verify(token);
+
+                chain.doFilter(request, response);
+            } catch (Exception e) {
+                httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+
+            }
+        } else {
+            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authorization header missing or invalid");
+
         }
-
-        String authHeader = exchange.getRequest().getHeaders().getFirst(AUTH_HEADER);
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            log.error("Authorization header is missing or invalid");
-            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization header is missing or invalid"));
-        }
-
-        String token = authHeader.substring(BEARER_PREFIX.length());
-        log.info("Token received: {}", token);
-
-        String userServiceUri = UriComponentsBuilder.fromHttpUrl(userServiceUrl)
-                .path("/validate-token")
-                .queryParam("token", token)
-                .toUriString();
-        log.info("User service URI: {}", userServiceUri);
-
-        return webClientBuilder.build()
-                .get()
-                .uri(userServiceUri)
-                .retrieve()
-                .bodyToMono(User.class)
-                .flatMap(user -> {
-                    if (user == null) {
-                        log.error("User service returned null user for token validation");
-                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user token"));
-                    }
-                    return chain.filter(exchange);
-                })
-                .onErrorResume(WebClientResponseException.Unauthorized.class, e -> {
-                    log.error("Unauthorized error when validating token");
-                    return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"));
-                })
-                .onErrorResume(Exception.class, e -> {
-                    log.error("Error validating token in user service", e);
-                    return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error validating token in user service"));
-                });
     }
 
 
-
-////    @Override
-////    public @NonNull Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-////        String uri = exchange.getRequest().getURI().toString();
-////
-////        // Пропускаем запросы на login и register без авторизации
-////        if (uri.contains("/login") || uri.contains("/register")) {
-////            return chain.filter(exchange);
-////        }
-////
-////        // Получаем токен из заголовка Authorization
-////        String authHeader = exchange.getRequest().getHeaders().getFirst(AUTH_HEADER);
-////
-////        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-////            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization header is missing or invalid"));
-////        }
-////
-////        // Извлекаем токен
-////        String token = authHeader.substring(BEARER_PREFIX.length());
-////
-////        // Проверка токена
-////        try {
-////            JWT.decode(token); // Проверка на корректность формата токена
-////        } catch (JWTDecodeException e) {
-////            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"));
-////        }
-////
-////        // Проверка токена в микросервисе ms-users
-////        RestTemplate restTemplate = new RestTemplate();
-////        String userServiceUri = userServiceUrl + "/validate-token?token=" + token;
-////
-////        try {
-////            // Пытаемся получить модель пользователя, если токен валиден
-////            User user = restTemplate.getForObject(userServiceUri, User.class);
-////            if (user == null) {
-////                return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user token"));
-////            }
-////        } catch (Exception e) {
-////            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Error validating token in user service"));
-////        }
-////
-////        return chain.filter(exchange);
-////    }
 }

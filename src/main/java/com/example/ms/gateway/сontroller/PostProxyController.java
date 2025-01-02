@@ -20,8 +20,9 @@ public class PostProxyController {
     }
 
     @PostMapping("/post")
-    public ResponseEntity<?> proxyPostRequest(@RequestBody Post post) {
-        return postServiceProxy.createPost(post);
+    public ResponseEntity<?> proxyPostRequest(@RequestBody Post post,String userId) {
+
+        return postServiceProxy.createPost(post,userId);
     }
 }
 

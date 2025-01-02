@@ -2,9 +2,13 @@ package com.example.ms.gateway.service;
 
 import com.example.ms.gateway.dto.Post;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -24,8 +28,20 @@ public class PostServiceProxy {
         return restTemplate.getForEntity(url, String.class);
     }
 
-    public ResponseEntity<String> createPost(@RequestBody Post post) {
+    public ResponseEntity<String> createPost(@RequestBody Post post, @RequestHeader("UserData") String userId) {
         String url = postServiceUrl + "/api/v1/post";
-        return restTemplate.postForEntity(url, post , String.class);
+
+        // Создаём заголовки
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("UserData", userId); // Устанавливаем userId в заголовок
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Объединяем заголовки и тело запроса
+        HttpEntity<Post> requestEntity = new HttpEntity<>(post, headers);
+
+        // Отправляем запрос
+        return restTemplate.postForEntity(url, requestEntity, String.class);
     }
 }
+
+
