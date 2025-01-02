@@ -1,4 +1,4 @@
-package com.example.ms.gateway.GwController;
+package com.example.ms.gateway.сontroller;
 import com.example.ms.gateway.dto.Post;
 import com.example.ms.gateway.service.PostServiceProxy;
 import org.springframework.http.ResponseEntity;
