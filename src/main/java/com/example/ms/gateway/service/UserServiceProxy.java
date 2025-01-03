@@ -42,22 +42,17 @@ public class UserServiceProxy {
         String url = userServiceUrl + "/api/v1/user_pass/{id}";
 
         try {
-            // Выполнение GET-запроса с обработкой параметра id
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, null, String.class, id);
 
-            // Если ответ успешный, возвращаем его
             if (response.getStatusCode().is2xxSuccessful()) {
                 return ResponseEntity.ok(response.getBody());
             } else {
-                // В случае неуспешного ответа можно возвращать код ошибки
                 return ResponseEntity.status(response.getStatusCode()).body("Error retrieving user data");
             }
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            // Обработка исключений HTTP ошибок
             log.error("Error occurred while retrieving user data for ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(e.getStatusCode()).body("Error: " + e.getMessage());
         } catch (Exception e) {
-            // Обработка других неожиданных ошибок
             log.error("Unexpected error occurred while retrieving user data for ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred");
         }

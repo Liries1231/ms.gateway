@@ -33,7 +33,7 @@ public class PostServiceProxy {
 
         // Создаём заголовки
         HttpHeaders headers = new HttpHeaders();
-        headers.set("UserData", userId);
+        headers.set("UserData", userId); 
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Post> requestEntity = new HttpEntity<>(post, headers);
