@@ -22,7 +22,6 @@ public class UserProxyController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ResponseEntity<String>> createUserWithProfile(@RequestBody User userCreationDto) {
 
-        // Используем proxy для создания пользователя с профилем
         ResponseEntity<String> userProfile = userServiceProxy.register(userCreationDto);
 
         return ResponseEntity
