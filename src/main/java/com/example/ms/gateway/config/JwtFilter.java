@@ -2,6 +2,7 @@ package com.example.ms.gateway.config;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.ms.gateway.dto.User;
 import io.micrometer.common.lang.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +23,13 @@ import java.util.Optional;
 @Component
 @Slf4j
 public class JwtFilter implements WebFilter {
-    @Value("${user.service.url}")
-    private String userServiceUrl; // URL микросервиса ms-users
+
     private static final String AUTH_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+
+    @Value("${jwt.secret}")
+    private String secret;
+
     @Autowired
     private WebClient.Builder webClientBuilder;
 
@@ -33,40 +37,44 @@ public class JwtFilter implements WebFilter {
     public @NonNull Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String uri = exchange.getRequest().getURI().toString();
         log.info("Received request to URI: {}", uri);
+
         if (uri.contains("/login") || uri.contains("/register")) {
             return chain.filter(exchange);
         }
+
         String authHeader = exchange.getRequest().getHeaders().getFirst(AUTH_HEADER);
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             log.error("Authorization header is missing or invalid");
             return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization header is missing or invalid"));
         }
+
         String token = authHeader.substring(BEARER_PREFIX.length());
         log.info("Token received: {}", token);
-        String userServiceUri = UriComponentsBuilder.fromHttpUrl(userServiceUrl)
-                .path("/validate-token")
-                .queryParam("token", token)
-                .toUriString();
-        log.info("User service URI: {}", userServiceUri);
-        return webClientBuilder.build()
-                .get()
-                .uri(userServiceUri)
-                .retrieve()
-                .bodyToMono(User.class)
-                .flatMap(user -> {
-                    if (user == null) {
-                        log.error("User service returned null user for token validation");
-                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user token"));
-                    }
-                    return chain.filter(exchange);
-                })
-                .onErrorResume(WebClientResponseException.Unauthorized.class, e -> {
-                    log.error("Unauthorized error when validating token");
-                    return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"));
-                })
-                .onErrorResume(Exception.class, e -> {
-                    log.error("Error validating token in user service", e);
-                    return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error validating token in user service"));
-                });
+
+        // Декодирование токена и извлечение userId
+        String userId = extractUserIdFromToken(token);
+        if (userId == null) {
+            log.error("UserId is null in token");
+            return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token"));
+        }
+
+        log.info("Extracted userId from token: {}", userId);
+
+        exchange.getRequest().mutate()
+                .header("X-User-Id", userId)
+                .build();
+
+        return chain.filter(exchange);
+    }
+
+    private String extractUserIdFromToken(String token) {
+        try {
+            DecodedJWT decodedJWT = JWT.decode(token);
+            Long userId = decodedJWT.getClaim("userId").asLong();
+            return userId != null ? userId.toString() : null;
+        } catch (Exception e) {
+            log.error("Error decoding token", e);
+            return null;
+        }
     }
 }

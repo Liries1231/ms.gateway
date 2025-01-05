@@ -16,5 +16,13 @@ public class Post {
     private String title;
     private String description;
     private Long userId;
+    @Override
+    public String toString() {
+        return "PostDto{" +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
+
 }
 

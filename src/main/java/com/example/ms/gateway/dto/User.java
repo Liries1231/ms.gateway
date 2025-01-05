@@ -14,7 +14,12 @@ import java.time.Instant;
 @Setter
 public class User {
     private String login;
+    private Long id;
     private String password;
     private String birthYear;
     private String about;
+    @Override
+    public String toString() {
+        return "User{id=" + id + ", username='" + login + "'}";
+    }
 }
