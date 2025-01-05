@@ -51,7 +51,6 @@ public class JwtFilter implements WebFilter {
         String token = authHeader.substring(BEARER_PREFIX.length());
         log.info("Token received: {}", token);
 
-        // Декодирование токена и извлечение userId
         String userId = extractUserIdFromToken(token);
         if (userId == null) {
             log.error("UserId is null in token");
